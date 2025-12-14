@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ansh's E-Commerce Store</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        .product-container { display: flex; justify-content: center; gap: 20px; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 10px; width: 200px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+        .emoji { font-size: 50px; }
+        button { background: #007bff; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+        button:hover { background: #0056b3; }
+        #cart { margin-top: 30px; border-top: 2px solid #333; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>🛒 CodeAlpha E-Commerce Task 1</h1>
+    
+    <div id="loading">Loading products...</div>
+    <div class="product-container" id="products"></div>
+
+    <div id="cart">
+        <h2>Your Cart</h2>
+        <ul id="cart-list" style="list-style: none; padding: 0;"></ul>
+        <h3>Total: $<span id="total">0</span></h3>
+        <button onclick="checkout()" style="background: #28a745;">✅ Checkout</button>
+    </div>
+
+    <script>
+        let cart = [];
+
+        // Fetch products from backend
+        fetch('http://localhost:3000/products')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                const container = document.getElementById('products');
+                data.forEach(p => {
+                    container.innerHTML += `
+                        <div class="card">
+                            <div class="emoji">${p.image}</div>
+                            <h3>${p.name}</h3>
+                            <p>$${p.price}</p>
+                            <button onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
+                        </div>
+                    `;
+                });
+            });
+
+        function addToCart(name, price) {
+            cart.push({ name, price });
+            updateCart();
+        }
+
+        function updateCart() {
+            const list = document.getElementById('cart-list');
+            const totalSpan = document.getElementById('total');
+            list.innerHTML = '';
+            let total = 0;
+            
+            cart.forEach(item => {
+                total += item.price;
+                list.innerHTML += `<li>${item.name} - $${item.price}</li>`;
+            });
+            totalSpan.innerText = total;
+        }
+
+        function checkout() {
+            if(cart.length === 0) return alert("Cart is empty!");
+            
+            fetch('http://localhost:3000/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ total: document.getElementById('total').innerText, items: cart })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                cart = [];
+                updateCart();
+            });
+        }
+    </script>
+</body>
+</html>
